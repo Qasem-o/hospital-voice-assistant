@@ -1,337 +1,236 @@
-# Office Rental Booking App
+# Hospital Voice Assistant
 
-A full-stack web application for booking office spaces with AI chatbot support and bilingual (English & Arabic) interface.
+A full-stack hospital appointment booking app you can talk to. Patients browse doctors by specialty, book and cancel appointments, or simply **speak** to an AI assistant that checks live availability and books the slot for them — in **Arabic or English**.
+
+> Formerly named "Appoit".
+
+---
 
 ## Features
 
-✅ **Office Booking System**
-- Browse available offices
-- Real-time availability checking
-- Hourly and full-day rental options
-- Operating hours: 8 AM - 4 PM, Sunday to Thursday
-- Hour management to prevent double bookings
+- **Voice booking** — press Start, speak naturally, and the assistant books the appointment. It reads real doctor availability from the database on every message.
+- **AI chat booking** — same assistant in text form.
+- **Bilingual (العربية / English)** — UI, doctor records, speech recognition, and synthesized voice all switch language.
+- **Doctor browsing** — filter by specialty, see consultation fees and open hours.
+- **Appointment management** — book, view, reschedule, and cancel, with double-booking prevention.
+- **Spoken replies** — answers are synthesized to natural speech, with an automatic fallback to the browser's built-in voice.
 
-✅ **AI Chatbot Integration**
-- Conversational AI assistant using OpenAI GPT
-- Natural language understanding
-- Bilingual support (English & Arabic)
-- Can help users browse offices and make bookings through chat
+---
 
-✅ **User Management**
-- User registration and login
-- Multi-language preference storage
-- Booking history
+## Tech Stack
 
-✅ **Bilingual Support**
-- Full English and Arabic interface
-- RTL support for Arabic
-- AI responds in user's preferred language
+| Layer | Technology |
+|---|---|
+| Frontend | React 18, React Router 6, Tailwind CSS, Vite |
+| Backend | Node.js, Express 4 (ES modules) |
+| Database | MongoDB + Mongoose |
+| Conversational AI | Groq — `llama-3.3-70b-versatile` (via the OpenAI SDK pointed at Groq) |
+| Speech → text | Browser Web Speech API (no external service) |
+| Text → speech | ElevenLabs `eleven_multilingual_v2`, falling back to browser `speechSynthesis` |
+| Passwords | bcryptjs |
 
-✅ **Voice Interaction** (NEW!)
-- Speech-to-text conversion
-- Text-to-speech AI responses
-- Natural voice conversations in English & Arabic
-- Microphone input/output control
+---
 
-✅ **Phone Call Support** (NEW!)
-- Demo phone call interface
-- Ready for Twilio integration
-- Voice-based booking through phone calls
+## How Voice Booking Works
+
+```
+You speak
+   ↓
+Browser Web Speech API converts speech → text
+   ↓
+Frontend POSTs the text to the backend
+   ↓
+Backend loads doctors + today's free slots from MongoDB
+   ↓
+Backend sends message + live availability → Groq (Llama 3.3 70B)
+   ↓
+Groq replies, appending a hidden ##BOOK##{...}## tag when you confirm
+   ↓
+Backend strips the tag, returns clean text + a booking action
+   ↓
+Frontend speaks the reply (ElevenLabs) and writes the appointment to MongoDB
+```
+
+The assistant never guesses availability — the doctor list and open time slots are rebuilt from the database and injected into the system prompt on **every** turn. Booking is triggered by a sentinel tag the model appends once you confirm both a doctor and a time; the backend parses it out so the user never sees it.
+
+See [HOW_IT_WORKS.md](HOW_IT_WORKS.md) for the annotated, code-level walkthrough.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- MongoDB running locally on port 27017
+- A [Groq](https://console.groq.com) API key (free tier works) — required for the assistant
+- An [ElevenLabs](https://elevenlabs.io) API key — optional; without it, replies use the browser voice
+
+### 1. Backend
+
+```bash
+cd backend
+npm install
+cp .env.example .env     # then fill in your keys
+npm run dev              # http://localhost:8000
+```
+
+### 2. Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev              # http://localhost:3000
+```
+
+Vite proxies `/api` to the backend, so both must be running.
+
+### 3. Use it
+
+1. Open http://localhost:3000 and register an account.
+2. Nine doctors are seeded automatically on server start — no fixtures to load.
+3. Open the **Voice** tab, allow microphone access, and try:
+   - *"Book me an appointment with Dr. Omar tomorrow at 10 AM"*
+   - *"احجز لي موعد مع دكتور عمر غدا الساعة 10 صباحاً"*
+
+Chrome and Edge give the best speech-recognition support; Firefox is limited.
+
+---
+
+## Environment Variables
+
+`backend/.env`:
+
+```
+MONGODB_URI=mongodb://localhost:27017/hospital-booking
+GROQ_API_KEY=your_groq_key
+ELEVENLABS_API_KEY=your_elevenlabs_key
+NODE_ENV=development
+```
+
+`frontend/.env`:
+
+```
+VITE_API_URL=http://localhost:8000/api
+```
+
+**Never commit `.env`.** It is gitignored — keep it that way, and rotate any key that leaks.
+
+---
+
+## API
+
+Base URL: `http://localhost:8000/api`
+
+### Doctors
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/doctors` | List active doctors (filter with `?specialty=`) |
+| GET | `/doctors/specialties` | List all specialties |
+| GET | `/doctors/:id` | Get one doctor |
+
+### Appointments
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/appointments` | Book an appointment |
+| GET | `/appointments/user/:userId` | List a user's appointments |
+| PUT | `/appointments/:id/cancel` | Cancel an appointment |
+| GET | `/appointments/doctor/:doctorId/slots` | Free slots for a doctor |
+
+### Users
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/users/register` | Register |
+| POST | `/users/login` | Log in |
+| GET | `/users/:id` | Get profile |
+| PUT | `/users/:id` | Update profile |
+
+### AI
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/ai/init-chat` | Start a chat session |
+| POST | `/ai/chat` | Send a message, get a reply + optional booking action |
+| POST | `/ai/appointment` | Create an appointment from an AI booking action |
+| GET | `/ai/doctors` | Doctor list formatted for the assistant |
+| DELETE | `/ai/chat/:sessionId` | End a session |
+
+### Voice
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/voice/synthesize` | Text → speech (returns base64 MP3) |
+| POST | `/voice/transcribe` | Audio → text |
+| POST | `/voice/voice-booking` | Book via a voice flow |
+
+Full request/response shapes: [docs/API.md](docs/API.md).
+
+---
+
+## Data Models
+
+**Doctor** — `name`, `nameAr`, `specialty`, `specialtyAr`, `description`, `descriptionAr`, `consultationFee`, `availableHoursStart` (default 8), `availableHoursEnd` (default 16), `isActive`
+
+**User** — `name`, `email`, `phone`, `password` (bcrypt-hashed via a pre-save hook), `language`
+
+**Appointment** — `userId`, `doctorId`, `startTime`, `endTime`, `status` (`confirmed` / `cancelled` / `completed`), `bookedVia` (`website` / `ai-chat` / `voice-chat` / `phone-chat`), `notes`
+
+`Appointment.validateAvailability()` rejects any slot that overlaps an existing confirmed or completed booking.
+
+### Seeded Doctors
+
+Nine doctors across three specialties, upserted on every server start, each open 8:00–16:00:
+
+| Specialty | Doctors |
+|---|---|
+| Internal Medicine | Ahmed Al-Rashidi, Sara Al-Zahrawi, Khalid Al-Amin |
+| Cardiology | Faisal Al-Mutar, Nora Al-Habboubi, Omar Al-Ghamdi |
+| Orthopedics | Yusuf Al-Jaber, Layla Al-Suwaidi, Tariq Al-Harbi |
+
+---
 
 ## Project Structure
 
 ```
-office-rental-booking-app/
-├── backend/                          # Node.js Express API
-│   ├── src/
-│   │   ├── models/                  # MongoDB schemas
-│   │   │   ├── User.js
-│   │   │   ├── Office.js
-│   │   │   └── Booking.js
-│   │   ├── controllers/             # Business logic
-│   │   │   ├── userController.js
-│   │   │   ├── officeController.js
-│   │   │   ├── bookingController.js
-│   │   │   └── aiController.js
-│   │   ├── routes/                  # API endpoints
-│   │   ├── ai/                      # AI integration
-│   │   ├── utils/                   # Helper functions
-│   │   └── server.js               # Entry point
-│   └── package.json
-│
-├── frontend/                         # React Vite app
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── OfficeCard.jsx
-│   │   │   └── ChatBot.jsx
-│   │   ├── pages/
-│   │   │   ├── AuthPage.jsx
-│   │   │   ├── BrowseOfficesPage.jsx
-│   │   │   └── BookingsPage.jsx
-│   │   ├── utils/
-│   │   │   ├── api.js              # API client
-│   │   │   └── translations.js     # Multi-language support
-│   │   ├── App.jsx                 # Main app component
-│   │   ├── main.jsx                # Entry point
-│   │   └── app.css
-│   ├── index.html
-│   └── package.json
-│
-└── docs/
-    ├── API.md                      # API documentation
-    ├── SETUP.md                    # Setup instructions
-    └── VOICE.md                    # Voice interaction guide
-
+.
+├── backend/
+│   └── src/
+│       ├── server.js            # Express entry point, port 8000
+│       ├── models/              # Doctor, User, Appointment
+│       ├── controllers/         # doctor, appointment, user, ai, voice
+│       ├── routes/              # one router per controller
+│       └── utils/translations.js
+└── frontend/
+    └── src/
+        ├── App.jsx              # routes
+        ├── pages/               # BrowseDoctors, Appointments, Auth
+        ├── components/          # ChatBot, VoiceChatBot, PhoneChatBot, DoctorCard
+        └── utils/               # api client, translations
 ```
-
-## Tech Stack
-
-**Backend:**
-- Node.js with Express
-- MongoDB for data storage
-- OpenAI API for AI chatbot
-- JWT for authentication
-- bcrypt for password hashing
-- Twilio API ready (for phone calls)
-
-**Frontend:**
-- React 18
-- Vite (build tool)
-- Tailwind CSS (styling)
-- Axios (HTTP client)
-- Web Speech API (voice recognition & synthesis)
-
-**Voice Features:**
-- Browser Speech Recognition API (Chromium-based browsers)
-- Browser Speech Synthesis API (all modern browsers)
-- Twilio Integration Ready
-
-## Installation & Setup
-
-### Prerequisites
-- Node.js 16+
-- MongoDB running locally or MongoDB Atlas URI
-- OpenAI API key
-
-### Backend Setup
-
-```bash
-cd backend
-
-# Install dependencies
-npm install
-
-# Create .env file
-cp .env.example .env
-
-# Update .env with your values:
-# - MONGODB_URI: MongoDB connection string
-# - OPENAI_API_KEY: Your OpenAI API key
-# - JWT_SECRET: Your JWT secret key
-
-# Start development server
-npm run dev
-```
-
-The API will run on `http://localhost:5000`
-
-### Frontend Setup
-
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-The frontend will run on `http://localhost:3000`
-
-## API Endpoints
-
-### Bookings
-- `POST /api/bookings` - Create booking
-- `GET /api/bookings/:id` - Get booking details
-- `GET /api/bookings/user/:userId` - Get user's bookings
-- `PUT /api/bookings/:id/cancel` - Cancel booking
-- `GET /api/bookings/office/:officeId/slots` - Get available slots
-
-### Offices
-- `GET /api/offices` - Get all offices
-- `GET /api/offices/:id` - Get office details
-- `POST /api/offices` - Create office (admin)
-- `PUT /api/offices/:id` - Update office (admin)
-- `DELETE /api/offices/:id` - Delete office (admin)
-
-### Users
-- `POST /api/users/register` - Register user
-- `POST /api/users/login` - Login user
-- `GET /api/users/:id` - Get user profile
-- `PUT /api/users/:id` - Update user
-
-### AI Chat
-- `POST /api/ai/init-chat` - Initialize chat session
-- `POST /api/ai/chat` - Send message to AI
-- `POST /api/ai/booking` - Book via AI chat
-- `GET /api/ai/offices` - Get offices for AI
-- `DELETE /api/ai/chat/:sessionId` - End chat session
-
-## Booking Rules
-
-- **Available Hours:** 8:00 AM - 4:00 PM
-- **Available Days:** Sunday to Thursday
-- **Minimum Booking:** 1 hour
-- **Maximum Booking:** 8 hours per day
-- **Hour Management:** Prevents double bookings through conflict checking
-
-## AI Features
-
-The AI chatbot:
-- Understands natural language requests in English and Arabic
-- Can help users browse offices
-- Can assist in making bookings
-- Feels natural and human-like in conversations
-- Provides helpful information about office availability
-
-### Example Conversations
-
-**English:**
-> User: "I want to book an office for tomorrow for 2 hours"
-> AI: "Great! I can help with that. What time would you like to start? We have offices available from 8 AM to 4 PM."
-
-**Arabic:**
-> User: "أريد حجز مكتب غدا لمدة ساعتين"
-> AI: "ممتاز! يمكنني مساعدتك. ما الوقت الذي تفضله؟ لدينا مكاتب متاحة من 8 صباحاً إلى 4 مساءً."
 
 ---
 
-## Voice Interaction Features
+## Project Status
 
-### 🎙️ Voice Chat
-- **Speech-to-Text**: Speak naturally, the app converts your voice to text
-- **Text-to-Speech**: AI responds with natural-sounding voice
-- **Real-time Conversation**: Have natural conversations with the AI assistant
-- **Bilingual Voice**: Works in both English and Arabic
-- **Microphone Controls**: Start, stop, and manage recording
-- **Voice Feedback**: See what the AI heard and is saying
+This is a **student / portfolio project**, not a production medical system. Known gaps, stated plainly:
 
-**How to Use Voice Chat:**
-1. Click the "🎙️ Voice" tab
-2. Click "Start Listening" button
-3. Speak your request clearly (e.g., "I want to book an office for 2 hours tomorrow")
-4. Click "Send" to submit
-5. Listen to the AI response
-
-**Browser Compatibility:**
-- Chrome/Chromium: Full support ✅
-- Firefox: Partial (speech-to-text may be limited)
-- Safari: Full support ✅
-- Edge: Full support ✅
-- Mobile browsers: Full support ✅
-
-### 📞 Phone Call Interface
-- **Simulated Phone Calls**: Demo interface for phone-based booking
-- **Phone Number Input**: Enter your phone number
-- **Call Duration Tracking**: See call time
-- **Twilio Ready**: Backend ready for real Twilio integration
-
-**How to Use Phone Chat:**
-1. Click the "📞 Phone" tab
-2. Enter a phone number
-3. Click "Start Call"
-4. Chat with the AI through the call interface
-5. Click "End Call" to finish
-
-**To Enable Real Phone Calls:**
-1. Get Twilio credentials from https://www.twilio.com
-2. Add to `.env`:
-   ```
-   TWILIO_ACCOUNT_SID=your_account_sid
-   TWILIO_AUTH_TOKEN=your_auth_token
-   TWILIO_PHONE_NUMBER=+1234567890
-   ```
-3. Update `voiceController.js` to use Twilio SDK
-4. Deploy with Twilio webhooks configured
+- **No token auth.** Login verifies a bcrypt-hashed password and returns a `userId`; there are no JWTs and API routes are not protected. Anyone who knows a `userId` can read or modify that user's appointments.
+- **The Phone tab is a simulation.** It demonstrates the call flow in the UI only — Twilio is not wired up, and no real calls are placed.
+- **Chat history is in memory.** Sessions live in a plain object and are lost on server restart.
+- **Port 8000 is hardcoded** in `server.js`; the `PORT` variable is not read.
+- **Not HIPAA/PDPL compliant** — do not put real patient data in it.
 
 ---
 
-## Browser Permissions
+## Documentation
 
-The voice chat requires microphone access. Your browser will ask for permission:
-1. When you first use voice features
-2. Grant permission to enable microphone
-3. You can revoke in browser settings anytime
+- [HOW_IT_WORKS.md](HOW_IT_WORKS.md) — annotated walkthrough of the voice pipeline
+- [PROJECT.md](PROJECT.md) — architecture reference
+- [docs/SETUP.md](docs/SETUP.md) — detailed setup
+- [docs/MONGODB_SETUP.md](docs/MONGODB_SETUP.md) — local and Atlas database setup
+- [docs/API.md](docs/API.md) — API reference
+- [docs/VOICE.md](docs/VOICE.md) — voice feature details
 
-**Security Notes:**
-- Audio is processed locally in browser (speech recognition)
-- Only transcripts are sent to the server
-- No audio files are permanently stored
-- HTTPS required for microphone access
-
-## Environment Variables
-
-Create a `.env` file in the backend directory:
-
-```
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/office-rental
-JWT_SECRET=your_jwt_secret_key_here
-OPENAI_API_KEY=your_openai_api_key_here
-NODE_ENV=development
-```
-
-## Running the App
-
-### Terminal 1 - Backend
-```bash
-cd backend
-npm run dev
-```
-
-### Terminal 2 - Frontend
-```bash
-cd frontend
-npm run dev
-```
-
-Visit `http://localhost:3000` in your browser.
-
-## Sample Data
-
-To seed the database with sample offices, you can make a POST request to `/api/offices`:
-
-```json
-{
-  "name": "Modern Office Suite",
-  "description": "Fully equipped modern office with high-speed internet",
-  "location": "Downtown Dubai",
-  "capacity": 4,
-  "pricePerHour": 50,
-  "amenities": ["WiFi", "Parking", "Meeting Room", "Coffee"]
-}
-```
-
-## Future Enhancements
-
-- Payment integration (Stripe, PayPal)
-- Email notifications
-- Admin dashboard
-- Video conferencing integration
-- Booking calendar view
-- Mobile app
-- ✅ Voice interaction with AI
-- ✅ Phone call support (Twilio)
-- User reviews and ratings
-- Office search and filtering
-- Real-time notifications
-- Advanced NLP for better voice understanding
+---
 
 ## License
 
 MIT
-
-## Support
-
-For issues or questions, please open an issue in the repository.
