@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[dir="rtl"], .font-arabic {
+  font-family: 'Segoe UI', 'Tahoma', 'Arial', system-ui, sans-serif;
+}
+
+/* RTL logical utilities */
+[dir="rtl"] .me-2 { margin-right: 0.5rem; margin-left: 0; }
+[dir="rtl"] .ms-2 { margin-left: 0.5rem; margin-right: 0; }
+[dir="rtl"] .ms-auto { margin-left: auto; margin-right: 0; }
+[dir="rtl"] .me-auto { margin-right: auto; margin-left: 0; }
+
+/* ── Animations ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes rotating {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes waveBar {
+  0%, 100% { transform: scaleY(0.3); }
+  50%       { transform: scaleY(1); }
+}
+
+@keyframes pulseRing {
+  0%   { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+.animate-fade-in-up  { animation: fadeInUp 0.38s ease-out both; }
+.animate-fade-in     { animation: fadeIn  0.25s ease-out both; }
+.animate-scale-in    { animation: scaleIn 0.22s ease-out both; }
+.animate-rotating    { animation: rotating 1.3s linear infinite; }
+
+/* Voice waveform */
+.voice-waveform {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.voice-waveform-bar {
+  width: 3px;
+  background: currentColor;
+  border-radius: 3px;
+  transform-origin: bottom;
+  animation: waveBar 0.85s ease-in-out infinite;
+}
+
+.voice-waveform-bar:nth-child(1) { height: 10px; animation-delay: 0s; }
+.voice-waveform-bar:nth-child(2) { height: 18px; animation-delay: 0.1s; }
+.voice-waveform-bar:nth-child(3) { height: 26px; animation-delay: 0.2s; }
+.voice-waveform-bar:nth-child(4) { height: 18px; animation-delay: 0.3s; }
+.voice-waveform-bar:nth-child(5) { height: 10px; animation-delay: 0.4s; }
+
+/* Pulse ring for mic button */
+.pulse-ring {
+  position: relative;
+}
+.pulse-ring::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 3px solid currentColor;
+  opacity: 0;
+  animation: pulseRing 1.6s ease-out infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
