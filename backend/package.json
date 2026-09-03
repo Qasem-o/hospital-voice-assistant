@@ -1,7 +1,7 @@
 {
-  "name": "office-rental-api",
+  "name": "hospital-voice-assistant-api",
   "version": "1.0.0",
-  "description": "Office rental booking API with AI chatbot",
+  "description": "Hospital appointment booking API with AI chat and voice booking",
   "main": "src/server.js",
   "type": "module",
   "scripts": {
@@ -9,10 +9,11 @@
     "dev": "nodemon src/server.js"
   },
   "keywords": [
+    "hospital",
+    "appointments",
     "booking",
-    "office",
-    "rental",
-    "ai"
+    "ai",
+    "voice"
   ],
   "author": "",
   "license": "MIT",

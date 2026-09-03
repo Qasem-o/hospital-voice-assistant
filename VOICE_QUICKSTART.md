@@ -1,127 +1,104 @@
 # Voice Chat Quick Start
 
-## 🎯 Get Started in 2 Minutes
+Talk to the hospital assistant in about two minutes.
 
-### Step 1: Start the App
+## Step 1 — Start the app
+
 ```bash
 # Terminal 1: Backend
 cd backend
 npm install
-npm run dev
+npm run dev          # http://localhost:8000
 
-# Terminal 2: Frontend  
+# Terminal 2: Frontend
 cd frontend
 npm install
-npm run dev
+npm run dev          # http://localhost:3000
 ```
 
-### Step 2: Log In
-1. Open http://localhost:3000
-2. Register or login with test account
-3. Click "🎙️ Voice" tab
+You need `GROQ_API_KEY` in `backend/.env` — see [docs/SETUP.md](docs/SETUP.md).
 
-### Step 3: Talk to AI
-1. Click "Start Listening" 🎤
-2. Speak your request: *"I want to book an office for 2 hours tomorrow"*
-3. Click "Send" ✓
-4. Listen to AI response 🔊
+## Step 2 — Log in
+
+1. Open http://localhost:3000
+2. Register an account (or log in)
+3. Open the **🎙️ Voice** tab
+
+## Step 3 — Talk
+
+1. Click **Start Listening** 🎤 and allow microphone access
+2. Say: *"Book me an appointment with Dr. Omar tomorrow at 10 AM"*
+3. Check the transcript on screen, then click **Send** ✓
+4. Listen to the reply 🔊 — if you confirmed a doctor and a time, the appointment is already booked
 
 ---
 
-## Example Voice Commands
+## Example commands
 
 ### Booking
-- "Book me an office for tomorrow 10 AM"
-- "I need a meeting room for 2 hours"
-- "Reserve downtown office, 1 PM, 3 hours"
+- "Book me an appointment with Dr. Omar tomorrow at 10 AM"
+- "I need to see a cardiologist this morning"
+- "What times does Dr. Sara have free?"
 
-### Arabic
-- "احجز لي مكتب غدا الساعة 10 صباحاً"
-- "أريد قاعة اجتماعات لمدة ساعتين"
-- "احجز مكتب وسط المدينة"
+### Managing
+- "Show me my appointments"
+- "Cancel my appointment with Dr. Khalid"
+- "Move my appointment to 2 PM"
+
+### العربية
+- "احجز لي موعد مع دكتور عمر غدا الساعة 10 صباحاً"
+- "أريد طبيب قلب اليوم"
+- "ما هي مواعيدي؟"
 
 ---
 
-## Phone Call Feature
+## Phone tab
 
-### Demo:
-1. Click "📞 Phone" tab
-2. Enter phone number
-3. Click "Start Call"
-
-### Real Phones (Twilio):
-```
-1. Get Twilio account: twilio.com
-2. Add to .env:
-   TWILIO_ACCOUNT_SID=ACxxx
-   TWILIO_AUTH_TOKEN=xxx
-   TWILIO_PHONE_NUMBER=+1234567890
-3. Enable in voiceController.js
-4. Deploy with HTTPS
-```
+The **📞 Phone** tab is a **demo** — it shows the call flow in the UI, but no real call is placed. Twilio is not wired up. See [docs/VOICE.md](docs/VOICE.md).
 
 ---
 
 ## Troubleshooting
 
-**No microphone?**
-- Allow permission when browser asks
-- Check browser settings
-- Try Chrome/Edge/Safari
+**Microphone button does nothing?**
+Use Chrome, Edge, or Safari — Firefox's speech recognition is unreliable. Allow permission when asked.
 
-**Not hearing audio?**
-- Check volume
-- Try headphones
-- Enable speaker in browser
+**No audio?**
+Check your volume. If `ELEVENLABS_API_KEY` is missing or out of credits, the app falls back to the browser voice automatically.
 
-**Can't understand?**
-- Speak clearly
-- Reduce background noise
-- See VOICE.md for best practices
+**Assistant says to add GROQ_API_KEY?**
+Add the key to `backend/.env` and restart the backend.
+
+**Misheard you?**
+Speak in one continuous phrase, reduce background noise, and review the transcript before sending.
 
 ---
 
-## Browser Support
+## Browser support
 
 | Browser | Status | Notes |
-|---------|--------|-------|
-| Chrome  | ✅ Best | Perfect support |
-| Firefox | ⚠️ Limited | Speech-to-text may not work |
-| Safari  | ✅ Full | iOS & Mac |
-| Edge    | ✅ Full | Based on Chrome |
-| Mobile  | ✅ Full | Android & iOS |
+|---|---|---|
+| Chrome | ✅ Best | Full support |
+| Edge | ✅ Full | Chromium-based |
+| Safari | ✅ Full | macOS & iOS |
+| Firefox | ⚠️ Limited | Speech-to-text often unavailable |
 
 ---
 
-## What's Happening
+## What's happening
 
 ```
-You Speak
+You speak
    ↓
-Browser hears you
+Browser converts speech → text
    ↓
-Converts speech to text
+Sent to the backend with live doctor availability
    ↓
-Sends to server
+Groq (Llama 3.3 70B) generates a reply
    ↓
-AI (OpenAI) processes
+ElevenLabs speaks it back
    ↓
-Sends response back
-   ↓
-Browser reads response
-   ↓
-You hear AI voice
+Appointment is written to MongoDB
 ```
 
----
-
-## Next Steps
-
-1. ✅ Try voice chat
-2. 📖 Read [VOICE.md](../docs/VOICE.md) for details
-3. 🤖 Enable Twilio for real phone calls
-4. 🎯 Explore other features
-
----
-
-**Ready to talk?** Click the 🎙️ button! 🚀
+Full walkthrough: [HOW_IT_WORKS.md](HOW_IT_WORKS.md)

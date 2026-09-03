@@ -1,381 +1,152 @@
-# Setup and Installation Guide
+# Setup Guide
 
-## Prerequisites
-
-Before starting, ensure you have:
-- **Node.js** 16.x or higher ([Download](https://nodejs.org/))
-- **npm** 8.x or higher (comes with Node.js)
-- **MongoDB** running locally or a MongoDB Atlas account ([Get started](https://www.mongodb.com/cloud/atlas))
-- **OpenAI API Key** ([Get API Key](https://platform.openai.com/api-keys))
-- **Git** for version control
+Full local setup for the Hospital Voice Assistant.
 
 ---
 
-## Step 1: Clone or Download Project
+## 1. Prerequisites
+
+| Requirement | Notes |
+|---|---|
+| Node.js 18+ | `node -v` to check |
+| MongoDB | Running locally on port 27017, or a MongoDB Atlas cluster — see [MONGODB_SETUP.md](MONGODB_SETUP.md) |
+| Groq API key | Required for the assistant. Free at [console.groq.com](https://console.groq.com) |
+| ElevenLabs API key | Optional. Without it, replies use the browser voice |
+| Chrome or Edge | Best Web Speech API support for voice input |
+
+---
+
+## 2. Get the code
 
 ```bash
-# If cloning from git (if applicable)
-git clone <repository-url>
-cd office-rental-booking-app
-
-# Or navigate to your existing project folder
-cd /path/to/office-rental-booking-app
+git clone https://github.com/<your-username>/hospital-voice-assistant.git
+cd hospital-voice-assistant
 ```
 
 ---
 
-## Step 2: Backend Setup
+## 3. Backend
 
-### 2.1 Navigate to Backend Directory
 ```bash
 cd backend
-```
-
-### 2.2 Install Dependencies
-```bash
 npm install
-```
-
-This will install all required packages:
-- express - Web framework
-- mongoose - MongoDB driver
-- openai - OpenAI API client
-- cors - Cross-origin requests
-- bcryptjs - Password hashing
-- jsonwebtoken - Authentication tokens
-- dotenv - Environment variables
-
-### 2.3 Create Environment File
-```bash
 cp .env.example .env
 ```
 
-### 2.4 Configure Environment Variables
+Edit `backend/.env`:
 
-Edit `.env` file with your settings:
-
-```bash
-# Server Configuration
-PORT=5000
+```
+MONGODB_URI=mongodb://localhost:27017/hospital-booking
+GROQ_API_KEY=your_groq_api_key_here
+ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
 NODE_ENV=development
-
-# Database Configuration
-# Option 1: Local MongoDB
-MONGODB_URI=mongodb://localhost:27017/office-rental
-
-# Option 2: MongoDB Atlas Cloud
-# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/office-rental
-
-# Authentication
-JWT_SECRET=your_super_secret_jwt_key_here_change_in_production
-
-# AI Integration
-OPENAI_API_KEY=sk-your-openai-api-key-here
 ```
 
-**Getting Your OpenAI API Key:**
-1. Go to [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-2. Sign in or create an account
-3. Create a new API key
-4. Copy and paste it in the `.env` file
+Start it:
 
-### 2.5 MongoDB Setup
-
-**Option 1: Local MongoDB**
 ```bash
-# If you don't have MongoDB installed:
-# macOS (using Homebrew)
-brew tap mongodb/brew
-brew install mongodb-community
-brew services start mongodb-community
-
-# Then verify it's running
-mongo
-```
-
-**Option 2: MongoDB Atlas (Cloud)**
-1. Go to [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
-2. Sign up for free account
-3. Create a cluster
-4. Get connection string
-5. Add to `.env` file
-
-### 2.6 Start Backend Server
-
-**Development Mode (with hot reload):**
-```bash
-npm run dev
-```
-
-**Production Mode:**
-```bash
+npm run dev      # nodemon, reloads on change
+# or
 npm start
 ```
 
-You should see:
+The server listens on **port 8000**. You should see:
+
 ```
-MongoDB connected
-Server running on port 5000
+Hospital Booking Server running on port 8000
 ```
 
-### 2.7 Test Backend
+> The port is hardcoded in `src/server.js` — setting `PORT` in `.env` has no effect.
 
-Open your browser or use curl:
-```bash
-curl http://localhost:5000/api/health
-```
-
-Expected response:
-```json
-{
-  "status": "OK",
-  "timestamp": "2026-06-08T12:00:00Z"
-}
-```
+**Never commit `.env`.** It is gitignored; keep it that way.
 
 ---
 
-## Step 3: Frontend Setup
+## 4. Frontend
 
-### 3.1 Open New Terminal and Navigate to Frontend
+In a second terminal:
+
 ```bash
-# From project root
 cd frontend
-```
-
-### 3.2 Install Dependencies
-```bash
 npm install
-```
-
-This will install:
-- react - UI framework
-- react-dom - React rendering
-- axios - HTTP client
-- react-router-dom - Routing
-- Tailwind CSS - Styling
-- Vite - Build tool
-
-### 3.3 Create Environment File (Optional)
-```bash
 cp .env.example .env
-```
-
-The frontend is pre-configured to connect to `http://localhost:5000/api`
-
-### 3.4 Start Frontend Development Server
-```bash
 npm run dev
 ```
 
-You should see:
-```
-VITE v4.3.9  ready in 123 ms
+`frontend/.env`:
 
-➜  Local:   http://localhost:3000/
-➜  press h to show help
 ```
+VITE_API_URL=http://localhost:8000/api
+```
+
+Vite serves on **port 3000** and proxies `/api` to port 8000, so both processes must be running.
 
 ---
 
-## Step 4: Verify Everything is Working
+## 5. Verify
 
-### 4.1 Open Browser
-Go to [http://localhost:3000](http://localhost:3000)
+### Doctors seed themselves
 
-You should see the Office Rental Booking App login page.
+Nine doctors across Internal Medicine, Cardiology, and Orthopedics are upserted every time the server starts — there is no seed script to run and no sample data to insert by hand. Any doctor not in the seed list is removed, so the list stays clean across restarts.
 
-### 4.2 Create Test Account
-
-1. Click "Register" or toggle to register mode
-2. Enter sample data:
-   ```
-   Name: John Doe
-   Email: john@example.com
-   Phone: +1234567890
-   Password: test123
-   Language: English
-   ```
-3. Click Register
-
-### 4.3 Add Sample Offices
-
-Open a new terminal and run:
+Check it:
 
 ```bash
-# Enter backend directory
-cd backend
-
-# Add sample office data using curl
-curl -X POST http://localhost:5000/api/offices \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Modern Office Suite",
-    "description": "Fully equipped office with high-speed internet",
-    "location": "Downtown Dubai",
-    "capacity": 4,
-    "pricePerHour": 50,
-    "amenities": ["WiFi", "Parking", "Meeting Room", "Coffee"]
-  }'
-
-# Add another office
-curl -X POST http://localhost:5000/api/offices \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Creative Studio",
-    "description": "Perfect for design and creative work",
-    "location": "Business Bay",
-    "capacity": 6,
-    "pricePerHour": 75,
-    "amenities": ["WiFi", "Projector", "Whiteboard", "Kitchen"]
-  }'
+curl http://localhost:8000/api/doctors
+curl http://localhost:8000/api/doctors/specialties
 ```
 
-### 4.4 Test Booking Flow
+### Walk through the app
 
-1. Log in with your test account
-2. Click "Browse Offices"
-3. Select an office
-4. Choose date and time
-5. Select duration
-6. Click "Book Now"
+1. Open http://localhost:3000 and register an account.
+2. **Browse Doctors** — filter by specialty; each card shows the consultation fee and 8:00–16:00 hours.
+3. **Book** a 30-minute slot; booking the same slot twice returns `409`.
+4. **Appointments** — view and cancel.
+5. **Chat** tab — type *"Book me with Dr. Omar tomorrow at 10 AM"*.
+6. **Voice** tab — allow the microphone, press Start, and speak the same request.
 
-### 4.5 Test AI Chat
-
-1. Click "AI Chat" tab
-2. Type a message like: "I want to book an office"
-3. Chat with the AI assistant
+Switch the UI to العربية and everything — doctor names, speech recognition, and the synthesized voice — follows.
 
 ---
 
-## Development Workflow
+## 6. Troubleshooting
 
-### Terminal 1 - Backend Development
-```bash
-cd backend
-npm run dev
-```
+**`MongooseServerSelectionError`**
+MongoDB isn't running. Start it with `brew services start mongodb-community` (macOS) or `sudo systemctl start mongod` (Linux).
 
-### Terminal 2 - Frontend Development
+**Assistant replies "Please add GROQ_API_KEY to the backend .env file."**
+`GROQ_API_KEY` is missing or empty. Add it and restart the backend.
+
+**No voice comes back, but text replies work**
+`ELEVENLABS_API_KEY` is missing or the account is out of credits. The app falls back to the browser voice automatically — the backend returns `503` from `/api/voice/synthesize` and the frontend handles it.
+
+**The microphone button does nothing**
+Web Speech API support is limited in Firefox. Use Chrome, Edge, or Safari, and allow microphone access when prompted. It also requires `localhost` or HTTPS.
+
+**Frontend loads but every request fails**
+The backend isn't running, or `VITE_API_URL` is wrong. Restart Vite after changing `.env` — env vars are read at startup.
+
+**Chat forgets the conversation**
+Expected. Sessions live in memory and reset when the backend restarts.
+
+---
+
+## 7. Production notes
+
+This is a student project and is **not production-ready**. Before deploying anywhere real you would need to:
+
+- Add token-based authentication and protect the API routes — currently anyone with a `userId` can read or modify that user's appointments.
+- Move chat sessions out of process memory into Redis or the database.
+- Read the port from the environment instead of hardcoding 8000.
+- Serve over HTTPS — the Web Speech API requires it outside `localhost`.
+- Set a restrictive CORS origin; it is currently open.
+- Wire up Twilio properly if real phone calls are wanted — the phone flow is a simulation today.
+
+Build the frontend with:
+
 ```bash
 cd frontend
-npm run dev
+npm run build     # outputs to dist/
 ```
 
-### Terminal 3 - MongoDB (if running locally)
-```bash
-# Run after starting in another terminal
-mongod
-```
-
----
-
-## Building for Production
-
-### Frontend Build
-```bash
-cd frontend
-npm run build
-```
-
-Creates optimized files in `frontend/dist/`
-
-### Backend Deployment
-
-1. Set `NODE_ENV=production` in `.env`
-2. Use a process manager like PM2:
-   ```bash
-   npm install -g pm2
-   pm2 start src/server.js --name "office-rental-api"
-   ```
-
----
-
-## Troubleshooting
-
-### Issue: "MongoDB connection failed"
-**Solution:**
-- Check MongoDB is running: `mongod`
-- Verify `MONGODB_URI` in `.env`
-- For Atlas: Check IP whitelist and connection string
-
-### Issue: "OPENAI_API_KEY not found"
-**Solution:**
-- Ensure you added it to `.env` file
-- Get key from https://platform.openai.com/api-keys
-- Restart backend after updating `.env`
-
-### Issue: Port 5000 or 3000 already in use
-**Solution:**
-- Change PORT in backend `.env`
-- Change port in frontend `vite.config.js`
-- Or kill existing process
-
-### Issue: Frontend can't connect to backend
-**Solution:**
-- Ensure backend is running: `http://localhost:5000/api/health`
-- Check `proxy` in `frontend/vite.config.js`
-- Check browser console for CORS errors
-
-### Issue: "npm: command not found"
-**Solution:**
-- Install Node.js from https://nodejs.org/
-- Restart terminal after installation
-
----
-
-## Database Backup
-
-### Backup MongoDB (local)
-```bash
-mongodump --db office-rental --out ./backup
-```
-
-### Restore MongoDB (local)
-```bash
-mongorestore --db office-rental ./backup/office-rental
-```
-
----
-
-## Performance Tips
-
-1. **Add MongoDB Indexes:**
-   ```bash
-   # In MongoDB shell
-   use office-rental
-   db.bookings.createIndex({ "officeId": 1, "startTime": 1 })
-   db.users.createIndex({ "email": 1 })
-   ```
-
-2. **Enable Caching** in frontend for API responses
-
-3. **Optimize Images** for office listings
-
-4. **Use CDN** for static assets in production
-
----
-
-## Next Steps
-
-1. ✅ Setup complete! Start developing
-2. 📚 Read [API.md](./API.md) for endpoint documentation
-3. 🎨 Customize styling in `frontend/src/app.css`
-4. 🤖 Enhance AI prompts in `backend/src/controllers/aiController.js`
-5. 💾 Set up database backups
-6. 🚀 Deploy to production (Heroku, AWS, DigitalOcean, etc.)
-
----
-
-## Support
-
-For issues:
-1. Check the error messages carefully
-2. Review the troubleshooting section
-3. Check terminal output for detailed errors
-4. Ensure all prerequisites are installed
-
----
-
-**Last Updated:** June 8, 2026
-**Version:** 1.0.0
+Do not put real patient data in this application.

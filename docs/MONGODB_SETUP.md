@@ -61,7 +61,7 @@ MongoDB Atlas is a cloud-hosted MongoDB database service that:
 
 2. **Replace the `MONGODB_URI` with your actual connection string:**
    ```env
-   MONGODB_URI=mongodb+srv://qasem:your_password@cluster0.mongodb.net/office-rental?retryWrites=true&w=majority
+   MONGODB_URI=mongodb+srv://myuser:your_password@cluster0.mongodb.net/hospital-booking?retryWrites=true&w=majority
    ```
 
    **Important:**
@@ -167,7 +167,7 @@ mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>?retryWrites
 
 **Example:**
 ```
-mongodb+srv://qasem:mySecret123@cluster0.mongodb.net/office-rental?retryWrites=true&w=majority
+mongodb+srv://myuser:myPassword123@cluster0.mongodb.net/hospital-booking?retryWrites=true&w=majority
 ```
 
 **Common Issues:**
